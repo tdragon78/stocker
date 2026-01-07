@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { KISClient } from './api/kis';
+import { initializeStockMaster, searchStock } from './utils/masterFile';
+
 
 dotenv.config();
 
@@ -27,6 +29,33 @@ app.get('/api/stock/:code', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
+app.post('/api/stocks/prices', async (req, res) => {
+    const { codes } = req.body;
+    if (!Array.isArray(codes)) {
+        res.status(400).json({ error: 'Codes must be an array' });
+        return;
+    }
+
+    try {
+        const results = await kisClient.getStocksPrices(codes);
+        res.json(results);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Failed to fetch batch prices' });
+    }
+});
+
+app.get('/api/stocks/search', (req, res) => {
+    const { keyword } = req.query;
+    if (!keyword || typeof keyword !== 'string') {
+        res.status(400).json({ error: 'Keyword is required' });
+        return;
+    }
+    const results = searchStock(keyword);
+    res.json(results);
+});
+
+
+app.listen(port, async () => {
+    await initializeStockMaster();
     console.log(`Server is running at http://localhost:${port}`);
 });

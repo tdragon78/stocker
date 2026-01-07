@@ -14,8 +14,8 @@ const App: React.FC = () => {
           StockNorsery
         </Title>
       </Header>
-      <Content style={{ padding: '0 50px' }}>
-        <div className="site-layout-content" style={{ margin: '16px 0' }}>
+      <Content style={{ padding: '0' }}>
+        <div className="site-layout-content">
           <StockList />
         </div>
       </Content>
