@@ -74,4 +74,16 @@ export class KISClient {
             throw error;
         }
     }
+
+    public async getStocksPrices(codes: string[]): Promise<any[]> {
+        // Use Promise.all to fetch concurrently. 
+        // Note: Production apps might need rate limiting or chunking, 
+        // but for now Promise.all is sufficient for small lists.
+        const promises = codes.map(code =>
+            this.getStockPrice(code)
+                .then(data => ({ code, success: true, data }))
+                .catch(error => ({ code, success: false, error: error.message }))
+        );
+        return Promise.all(promises);
+    }
 }

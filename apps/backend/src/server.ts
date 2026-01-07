@@ -29,6 +29,21 @@ app.get('/api/stock/:code', async (req, res) => {
     }
 });
 
+app.post('/api/stocks/prices', async (req, res) => {
+    const { codes } = req.body;
+    if (!Array.isArray(codes)) {
+        res.status(400).json({ error: 'Codes must be an array' });
+        return;
+    }
+
+    try {
+        const results = await kisClient.getStocksPrices(codes);
+        res.json(results);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Failed to fetch batch prices' });
+    }
+});
+
 app.get('/api/stocks/search', (req, res) => {
     const { keyword } = req.query;
     if (!keyword || typeof keyword !== 'string') {
