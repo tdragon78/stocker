@@ -9,3 +9,7 @@
   ngrok, docker, k8s를 이용하여 차례대로 적용한다.
  - 기능적 목표는 김어준의 방송의 주식 아가방 프로그램에서 애기하는 기능을 최대한 적용한다.
    
+## CI/CD
+### github actions runner: self-hosted
+
+## 접속 URL : https://d5ccd2623685.ngrok-free.app/
