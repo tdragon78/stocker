@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Table, Tag, Space, Card, Typography, AutoComplete, Input, message, Checkbox } from 'antd';
+import { api } from '../api';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title } = Typography;
@@ -61,29 +62,25 @@ const StockList: React.FC = () => {
             if (codes.length === 0) return;
 
             try {
-                const response = await fetch('http://localhost:3001/api/stocks/prices', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ codes }),
-                });
+                const results = await api.getStocksPrices(codes);
 
-                if (response.ok) {
-                    const results = await response.json();
+                // Note: The logic below assumes results is an array of objects
+                // and each object mimics the structure { code, success, data: { output: ... } }
+                // Adjust if api.getStocksPrices returns differently (it currently returns results array directly).
 
-                    setData(currentData => currentData.map(stock => {
-                        const result = results.find((r: any) => r.code === stock.code);
-                        if (result && result.success && result.data && result.data.output) {
-                            const output = result.data.output;
-                            return {
-                                ...stock,
-                                price: parseInt(output.stck_prpr) || stock.price,
-                                change: parseInt(output.prdy_vrss) || stock.change,
-                                changeRate: parseFloat(output.prdy_ctrt) || stock.changeRate,
-                            };
-                        }
-                        return stock;
-                    }));
-                }
+                setData(currentData => currentData.map(stock => {
+                    const result = results.find((r: any) => r.code === stock.code);
+                    if (result && result.success && result.data && result.data.output) {
+                        const output = result.data.output;
+                        return {
+                            ...stock,
+                            price: parseInt(output.stck_prpr) || stock.price,
+                            change: parseInt(output.prdy_vrss) || stock.change,
+                            changeRate: parseFloat(output.prdy_ctrt) || stock.changeRate,
+                        };
+                    }
+                    return stock;
+                }));
             } catch (error) {
                 console.error('Failed to fetch prices:', error);
             }
@@ -101,15 +98,12 @@ const StockList: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:3001/api/stocks/search?keyword=${encodeURIComponent(value)}`);
-            if (response.ok) {
-                const results: SearchResult[] = await response.json();
-                setOptions(results.map(stock => ({
-                    value: stock.name,
-                    label: `${stock.name} (${stock.code})`,
-                    stock,
-                })));
-            }
+            const results: SearchResult[] = await api.searchStocks(value);
+            setOptions(results.map(stock => ({
+                value: stock.name,
+                label: `${stock.name} (${stock.code})`,
+                stock,
+            })));
         } catch (error) {
             console.error('Search failed:', error);
         }
