@@ -1,0 +1,52 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "apps/backend/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "turbo.json"
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted # Assuming self-hosted runner for persistence/shell execution
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+
+    - name: Install dependencies
+        # installing all dependencies because monorepo often needs workspace dep link
+      run: pnpm install --frozen-lockfile
+
+    - name: Build Backend
+      run: pnpm turbo build --filter=backend
+
+    - name: Stop Existing Backend (if any)
+      continue-on-error: true
+      run: |
+        # Find process listening on 3009 and kill it
+        fuser -k 3009/tcp || true
+
+    - name: Deploy Backend
+      run: |
+        # Run node server with PORT env
+        # nohup to keep it running
+        export PORT=3009
+        nohup node apps/backend/dist/server.js > backend.log 2>&1 &
+        echo "Backend deployed on port 3009"

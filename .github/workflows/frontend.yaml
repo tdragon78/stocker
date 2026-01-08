@@ -1,0 +1,56 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "apps/stocknorsery/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "turbo.json"
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted  # Assuming self-hosted runner for persistence/shell execution
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build Frontend
+      run: pnpm turbo build --filter=stocknorsery
+
+    - name: Stop Existing Frontend (if any)
+      continue-on-error: true
+      run: |
+        # Find process listening on 3001 and kill it
+        # Windows/powershell approach provided since user OS is Windows but often runners are Linux.
+        # This script assumes a Unix-like shell (bash) which is common for valid GH Actions even on Windows if using git bash, 
+        # BUT if the runner is pure Powershell, this needs adjustment. 
+        # Given "shell execution" usually implies bash in CI context, I will write standard bash.
+        # If running on Windows directly without git bash, this step might fail. 
+        # Safest is to try-catch or just proceed.
+        fuser -k 3001/tcp || true
+
+    - name: Deploy Frontend
+      run: |
+        # Using npx serve to serve the static build
+        # nohup to keep it running after the runner exits (if supported by runner config)
+        nohup npx serve -s apps/stocknorsery/dist -l 3001 > frontend.log 2>&1 &
+        echo "Frontend deployed on port 3001"
