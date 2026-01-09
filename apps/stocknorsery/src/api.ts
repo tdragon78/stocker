@@ -13,7 +13,7 @@ interface StockPriceResponse {
 }
 
 export const api = {
-    getStocksPrices: async (codes: string[]) => {
+    getStocksPrices: async (codes: string[]): Promise<StockPriceResponse[]> => {
         const response = await fetch(`${config.apiUrl}/api/stocks/prices`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
