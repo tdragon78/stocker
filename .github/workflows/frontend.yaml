@@ -16,6 +16,9 @@ jobs:
       matrix:
         node-version: [18.x]
 
+    env:
+      PORT: ${{ secrets.PORT || 3001 }}
+
     steps:
     - uses: actions/checkout@v4
 
@@ -38,19 +41,19 @@ jobs:
 
     - name: Stop Existing Frontend (if any)
       continue-on-error: true
+      # shell: bash
       run: |
-        # Find process listening on 3001 and kill it
-        # Windows/powershell approach provided since user OS is Windows but often runners are Linux.
-        # This script assumes a Unix-like shell (bash) which is common for valid GH Actions even on Windows if using git bash, 
-        # BUT if the runner is pure Powershell, this needs adjustment. 
-        # Given "shell execution" usually implies bash in CI context, I will write standard bash.
-        # If running on Windows directly without git bash, this step might fail. 
-        # Safest is to try-catch or just proceed.
-        fuser -k 3001/tcp || true
+        # Find process listening on $PORT and kill it
+        fuser -k $PORT/tcp || true
+
+    - name: Create .env file
+      run: |
+        echo "PORT=$PORT" > apps/stocknorsery/.env
 
     - name: Deploy Frontend
       run: |
         # Using npx serve to serve the static build
         # nohup to keep it running after the runner exits (if supported by runner config)
-        nohup npx serve -s apps/stocknorsery/dist -l 3001 > frontend.log 2>&1 &
-        echo "Frontend deployed on port 3001"
+        nohup npx serve -s apps/stocknorsery/dist -l $PORT > frontend.log 2>&1 &
+        echo "Frontend deployed on port $PORT"
+
