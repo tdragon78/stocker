@@ -20,7 +20,7 @@ const App: React.FC = () => {
         </div>
       </Content>
       <Footer style={{ textAlign: 'center' }}>
-        StockNorsery ©{new Date().getFullYear()} Created by Antigravity
+        StockNorsery ©{new Date().getFullYear()} Antigravity 제작
       </Footer>
     </Layout>
   );

@@ -20,42 +20,21 @@ interface SearchResult {
     name: string;
 }
 
-// Mock Data
-const initialData: StockDataType[] = [
-    {
-        key: '1',
-        name: 'Samsung Electronics',
-        code: '005930',
-        price: 72500,
-        change: 500,
-        changeRate: 0.69,
-        saved: true,
-    },
-    {
-        key: '2',
-        name: 'SK Hynix',
-        code: '000660',
-        price: 132000,
-        change: -1500,
-        changeRate: -1.12,
-        saved: false,
-    },
-];
+// 초기 데이터 삭제 (빈 배열)
+const initialData: StockDataType[] = [];
 
 const StockList: React.FC = () => {
     const [data, setData] = useState<StockDataType[]>(initialData);
     const [options, setOptions] = useState<{ value: string; label: string; stock: SearchResult }[]>([]);
     const [searchValue, setSearchValue] = useState('');
 
-    // Auto-refresh every 3 seconds
-    // Use Ref to keep track of current codes without triggering effect re-run on price changes
+    // 자동 갱신 (3초 간격)
     const dataRef = React.useRef(data);
 
     React.useEffect(() => {
         dataRef.current = data;
     }, [data]);
 
-    // Auto-refresh every 3 seconds
     React.useEffect(() => {
         const fetchPrices = async () => {
             const codes = dataRef.current.map(d => d.code);
@@ -63,10 +42,6 @@ const StockList: React.FC = () => {
 
             try {
                 const results = await api.getStocksPrices(codes);
-
-                // Note: The logic below assumes results is an array of objects
-                // and each object mimics the structure { code, success, data: { output: ... } }
-                // Adjust if api.getStocksPrices returns differently (it currently returns results array directly).
 
                 setData(currentData => currentData.map(stock => {
                     const result = results.find((r: any) => r.code === stock.code);
@@ -82,7 +57,7 @@ const StockList: React.FC = () => {
                     return stock;
                 }));
             } catch (error) {
-                console.error('Failed to fetch prices:', error);
+                console.error('가격 갱신 실패:', error);
             }
         };
 
@@ -105,7 +80,7 @@ const StockList: React.FC = () => {
                 stock,
             })));
         } catch (error) {
-            console.error('Search failed:', error);
+            console.error('검색 실패:', error);
         }
     };
 
@@ -113,7 +88,7 @@ const StockList: React.FC = () => {
         const selectedStock = option.stock as SearchResult;
 
         if (data.find(d => d.code === selectedStock.code)) {
-            message.warning('This stock is already in the list.');
+            message.warning('이미 목록에 있는 종목입니다.');
             setSearchValue('');
             return;
         }
@@ -125,12 +100,12 @@ const StockList: React.FC = () => {
             price: 0,
             change: 0,
             changeRate: 0,
-            saved: false, // Default to false when adding
+            saved: false,
         };
 
         setData(prev => [newStock, ...prev]);
         setSearchValue('');
-        message.success(`Added ${selectedStock.name}`);
+        message.success(`${selectedStock.name} 종목이 추가되었습니다.`);
     };
 
     const toggleSaved = (key: string) => {
@@ -141,26 +116,26 @@ const StockList: React.FC = () => {
 
     const columns: ColumnsType<StockDataType> = [
         {
-            title: 'Stock Name',
+            title: '종목명',
             dataIndex: 'name',
             key: 'name',
             render: (text) => <span style={{ fontWeight: 'bold' }}>{text}</span>,
         },
         {
-            title: 'Code',
+            title: '종목코드',
             dataIndex: 'code',
             key: 'code',
             render: (code) => <Tag color="blue">{code}</Tag>,
         },
         {
-            title: 'Current Price',
+            title: '현재가',
             dataIndex: 'price',
             key: 'price',
             align: 'right',
-            render: (price) => price === 0 ? <Tag color="warning">No Data</Tag> : `${price.toLocaleString()} KRW`,
+            render: (price) => price === 0 ? <Tag color="warning">데이터 없음</Tag> : `${price.toLocaleString()}원`,
         },
         {
-            title: 'Change',
+            title: '변동량',
             key: 'change',
             align: 'right',
             render: (_, record) => {
@@ -185,7 +160,7 @@ const StockList: React.FC = () => {
             },
         },
         {
-            title: 'Saved',
+            title: '저장',
             dataIndex: 'saved',
             key: 'saved',
             render: (saved, record) => (
@@ -203,7 +178,7 @@ const StockList: React.FC = () => {
     return (
         <Card bordered={false} style={{ height: '100%', borderRadius: 0 }}>
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Title level={4} style={{ margin: 0 }}>My Watchlist</Title>
+                <Title level={4} style={{ margin: 0 }}>나의 관심 종목</Title>
                 <div style={{ width: 300 }}>
                     <AutoComplete
                         value={searchValue}
@@ -211,7 +186,7 @@ const StockList: React.FC = () => {
                         style={{ width: '100%' }}
                         onSelect={handleSelect}
                         onSearch={handleSearch}
-                        placeholder="Search Stock (e.g. Samsung)"
+                        placeholder="종목명 또는 코드 검색 (예: 삼성전자)"
                     >
                         <Input.Search size="middle" enterButton />
                     </AutoComplete>
